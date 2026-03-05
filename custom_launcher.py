@@ -22,7 +22,7 @@ sys.path.append(os.path.join(isaaclab_root, "scripts/reinforcement_learning/rsl_
 sys.argv = [
     "train.py", 
     "--task=Isaac-Push-Flip-Franka-v0", 
-    "--num_envs=64", 
+    "--num_envs=32", 
 ]
 
 runpy.run_path(os.path.join(isaaclab_root, "scripts/reinforcement_learning/rsl_rl/train.py"), run_name="__main__")

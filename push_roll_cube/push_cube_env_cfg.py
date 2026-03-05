@@ -38,11 +38,11 @@ class PushSceneCfg(InteractiveSceneCfg):
     object:RigidObjectCfg=RigidObjectCfg(
         prim_path="{ENV_REGEX_NS}/Object",
         init_state=RigidObjectCfg.InitialStateCfg(
-            pos=(0.5,0.0,0.05),
+            pos=(0.5,0.0,0.15),
             rot=(1.0,0.0,0.0,0.0)
         ),
         spawn=sim_utils.CuboidCfg(
-            size=(0.05,0.05,0.02),
+            size=(0.1,0.1,0.2),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             #give this cube a different height to distinguish 6 faces
             #it may help in the reward function designing
