@@ -121,17 +121,6 @@ class ObservationsCfg:
 
 @configclass
 class EventCfg:
-    randomize_object_friction=EventTerm(
-        func=mdp.randomize_rigid_body_material,
-        mode="startup",
-        params={
-            "asset_cfg":SceneEntityCfg("object"),
-            "static_friction_range":(0.7,0.9),
-            "dynamic_friction_range":(0.5,0.7),
-            "restitution_range":(0.0,0.0),
-            "num_buckets":16,
-        },
-    )
     reset_robot_joints=EventTerm(
         func=mdp.reset_joints_by_offset,
         mode="reset",
