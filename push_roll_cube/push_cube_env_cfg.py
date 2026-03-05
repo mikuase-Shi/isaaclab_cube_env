@@ -38,11 +38,12 @@ class PushSceneCfg(InteractiveSceneCfg):
     object:RigidObjectCfg=RigidObjectCfg(
         prim_path="{ENV_REGEX_NS}/Object",
         init_state=RigidObjectCfg.InitialStateCfg(
-            pos=(0.5,0.0,0.01),
+            pos=(0.5,0.0,0.05),
             rot=(1.0,0.0,0.0,0.0)
         ),
         spawn=sim_utils.CuboidCfg(
             size=(0.05,0.05,0.02),
+            collision_props=sim_utils.CollisionPropertiesCfg(),
             #give this cube a different height to distinguish 6 faces
             #it may help in the reward function designing
             rigid_props=sim_utils.RigidBodyPropertiesCfg(
@@ -61,11 +62,12 @@ class PushSceneCfg(InteractiveSceneCfg):
     table=AssetBaseCfg(
         prim_path="{ENV_REGEX_NS}/Table",
         init_state=AssetBaseCfg.InitialStateCfg(
-            pos=(0.5,0.0,-0.01)
+            pos=(0.5,0.0,0.0)
         ),
         spawn=sim_utils.CuboidCfg(
             size=(0.6,0.6,0.02),
             #Kinematic(Fixed) vs Dynamic
+            collision_props=sim_utils.CollisionPropertiesCfg(),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(kinematic_enabled=True),
             physics_material=sim_utils.RigidBodyMaterialCfg(
                 #changable parameters,depend on inferences
