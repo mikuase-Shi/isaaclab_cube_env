@@ -6,7 +6,7 @@ def object_local_z_alignment(env:ManagerBasedRLEnv)->torch.Tensor:
     quat=env.scene["object"].data.root_quat_w
     base_z=torch.zeros((quat.shape[0],3),device=quat.device)
     base_z[:,2]=1.0
-    world_z_of_object=math.utils.quat_rotate(quat,base_z)
+    world_z_of_object=math_utils.quat_rotate(quat,base_z)
     
     #calc the proj.
     return torch.abs(world_z_of_object[:,2]).unsqueeze(-1)
