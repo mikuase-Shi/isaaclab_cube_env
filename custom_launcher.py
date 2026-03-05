@@ -2,17 +2,27 @@ import sys
 import os
 import runpy
 
-sys.path.append("/root/gpufree-data/isaaclab_cube_env")
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
 
-import push_roll_cube
+isaaclab_root = "/root/IsaacLab" 
 
-sys.path.append(os.path.abspath("scripts/reinforcement_learning/rsl_rl"))
+os.chdir(isaaclab_root)
+
+try:
+    import push_roll_cube
+    print("✅ 环境身份证注册成功！")
+except ImportError as e:
+    print(f"❌ 注册失败：{e}")
+    sys.exit(1)
+
+sys.path.append(os.path.join(isaaclab_root, "scripts/reinforcement_learning/rsl_rl"))
 
 sys.argv = [
     "train.py", 
     "--task=Isaac-Push-Flip-Franka-v0", 
-    "--num_envs=4096", 
-    "--headless"
+    "--num_envs=64", 
 ]
 
-runpy.run_path("scripts/reinforcement_learning/rsl_rl/train.py", run_name="__main__")
+runpy.run_path(os.path.join(isaaclab_root, "scripts/reinforcement_learning/rsl_rl/train.py"), run_name="__main__")

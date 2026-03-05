@@ -110,8 +110,8 @@ class ObservationsCfg:
         object_pos=ObsTerm(func=mdp.root_pos_w,params={"asset_cfg":SceneEntityCfg("object")})
         object_quat=ObsTerm(func=mdp.root_quat_w,params={"asset_cfg":SceneEntityCfg("object")})
 
-        object_alignment_radar=ObsTerm(func=mdp.object_local_z_alignment)
-        object_pushed_radar=ObsTerm(func=mdp.object_x_displacement)
+        object_alignment_radar=ObsTerm(func=mdp.object_local_z_alignment_obs)
+        object_pushed_radar=ObsTerm(func=mdp.object_x_displacement_obs)
 
         def __post_init__(self):
             self.enable_corruption=True
