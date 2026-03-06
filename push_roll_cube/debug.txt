@@ -21,3 +21,4 @@
     解决方案：删掉 Reward 函数里的 .unsqueeze(-1)。
     但是又来了新的问题，删掉之后，Reward 不报错了，但 Observation 系统崩溃了（提示形状不兼容 ()）。因为 Observation 在拼接各种雷达特征时，必须要求特征是二维的列向量
     解决方案：拆成了算reward和拼接obs的两个函数
+5.生成的方块过小并且超出table边界问题
