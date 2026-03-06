@@ -147,6 +147,8 @@ class EventCfg:
 
 @configclass
 class RewardsCfg:
+
+    reaching_penalty = RewTerm(func=mdp.ee_object_distance_penalty, weight=-10.0)
     push_forward = RewTerm(
         func=mdp.object_x_displacement,
         weight=20.0, 

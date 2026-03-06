@@ -15,3 +15,9 @@ def object_x_displacement(env: ManagerBasedRLEnv) -> torch.Tensor:
     object_pos = env.scene["object"].data.root_pos_w
     
     return (object_pos[:, 0] - 0.5)
+
+def ee_object_distance_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
+    ee_pos=env.scene["ee_frame"].data.target_pos_w[...,0,:]
+    object_pos=env.scene["object"].data.root_pos_w
+    distance = torch.norm(ee_pos - object_pos, p=2, dim=-1)
+    return distance
