@@ -62,10 +62,10 @@ class PushSceneCfg(InteractiveSceneCfg):
     table=AssetBaseCfg(
         prim_path="{ENV_REGEX_NS}/Table",
         init_state=AssetBaseCfg.InitialStateCfg(
-            pos=(0.5,0.0,0.0)
+            pos=(0.7,0.0,0.0)
         ),
         spawn=sim_utils.CuboidCfg(
-            size=(0.6,0.6,0.02),
+            size=(1.0,0.6,0.02),
             #Kinematic(Fixed) vs Dynamic
             collision_props=sim_utils.CollisionPropertiesCfg(),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(kinematic_enabled=True),
@@ -137,7 +137,7 @@ class EventCfg:
         mode="reset",
         params={
             "asset_cfg":SceneEntityCfg("object"),
-            "pose_range":{"x":(0.4,0.6),"y":(-0.1,0.1),"yaw":(-3.14,3.14)},
+            "pose_range":{"x":(-0。1,0.1),"y":(-0.1,0.1),"yaw":(-3.14,3.14)},
             "velocity_range": {
                 "x": (0.0, 0.0), "y": (0.0, 0.0), "z": (0.0, 0.0),
                 "roll": (0.0, 0.0), "pitch": (0.0, 0.0), "yaw": (0.0, 0.0)
