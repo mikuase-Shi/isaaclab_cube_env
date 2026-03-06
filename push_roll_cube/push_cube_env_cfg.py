@@ -150,13 +150,13 @@ class RewardsCfg:
 
     reaching_penalty = RewTerm(func=mdp.ee_object_distance_penalty, weight=-10.0)
     push_forward = RewTerm(
-        func=mdp.object_x_displacement,
-        weight=20.0, 
+        func=mdp.object_x_velocity,
+        weight=5.0, 
     )
 
     flip_bonus = RewTerm(
-        func=mdp.object_local_z_alignment, 
-        weight=-50.0,
+        func=mdp.object_angular_velocity, 
+        weight=1.0,
     )
 
     action_rate_penalty = RewTerm(
