@@ -169,6 +169,11 @@ class RewardsCfg:
         weight=-0.0001
     )
 
+    ee_object_z_distance_penalty = RewTerm(
+        func=mdp.ee_object_z_distance_penalty,
+        weight=-2.0
+    )
+
 @configclass
 class TerminationsCfg:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)

@@ -32,3 +32,10 @@ def ee_object_distance_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
     object_pos=env.scene["object"].data.root_pos_w
     distance = torch.norm(ee_pos - object_pos, p=2, dim=-1)
     return distance
+
+def ee_object_z_distance_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
+    # Penalize the difference between the robot end-effector's z-height and the cube's central z-height
+    ee_pos = env.scene["ee_frame"].data.target_pos_w[..., 0, :]
+    object_pos = env.scene["object"].data.root_pos_w
+    z_distance = torch.abs(ee_pos[:, 2] - object_pos[:, 2])
+    return z_distance
