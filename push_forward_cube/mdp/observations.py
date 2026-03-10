@@ -15,5 +15,9 @@ def object_local_z_alignment_obs(env: ManagerBasedRLEnv) -> torch.Tensor:
     return torch.abs(world_z_of_object[:, 2]).unsqueeze(-1)
 
 def object_x_displacement_obs(env: ManagerBasedRLEnv) -> torch.Tensor:
-    object_pos = env.scene["object"].data.root_pos_w
-    return (object_pos[:, 0] - 0.5).unsqueeze(-1)
+    object_pos_w = env.scene["object"].data.root_pos_w
+    env_origins = env.scene.env_origins
+
+    object_pos_local_x = object_pos_w[:, 0] - env_origins[:, 0]
+    
+    return (object_pos_local_x - 0.5).unsqueeze(-1)

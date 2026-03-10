@@ -54,5 +54,8 @@ def ms_z_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
 
 
 def ms_y_drift_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
-    obj_y = env.scene["object"].data.root_pos_w[:, 1]
-    return 1.0 - torch.tanh(10.0 * torch.abs(obj_y))
+    obj_y_w = env.scene["object"].data.root_pos_w[:, 1]
+    env_origin_y = env.scene.env_origins[:, 1]
+    obj_y_local = obj_y_w - env_origin_y
+    
+    return 1.0 - torch.tanh(10.0 * torch.abs(obj_y_local))
