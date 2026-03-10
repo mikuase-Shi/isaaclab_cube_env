@@ -147,21 +147,14 @@ class EventCfg:
 
 @configclass
 class RewardsCfg:
-    # EXACT ManiSkill PushCube-v1 style. All reward functions return [0, 1].
-
-    # 1. Reaching (Weight = 2.0)
     reaching_reward = RewTerm(func=mdp.ms_reaching_reward, weight=2.0)
 
-    # 2. Pushing forward (Weight = 3.0, only active when reached)
     push_reward = RewTerm(func=mdp.ms_push_reward, weight=3.0)
 
-    # 3. Z-stability (Weight = 2.0, only active when reached and pushing)
     z_stability_reward = RewTerm(func=mdp.ms_z_reward, weight=2.0)
 
-    # 4. Y-rail stability (Weight = 1.0)
     y_rail_reward = RewTerm(func=mdp.ms_y_drift_penalty, weight=1.0)
 
-    # Standard small penalties for smooth joint actions
     action_rate_penalty = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
     joint_vel_penalty = RewTerm(func=mdp.joint_vel_l2, weight=-0.0001)
 
