@@ -150,7 +150,7 @@ class EventCfg:
 class RewardsCfg:
     reaching_reward = RewTerm(func=mdp.ms_reaching_reward, weight=2.0)
 
-    push_reward = RewTerm(func=mdp.ms_push_reward, weight=3.0)
+    push_reward = RewTerm(func=mdp.ms_push_reward, weight=15.0)
 
     z_stability_reward = RewTerm(func=mdp.ms_z_reward, weight=2.0)
 

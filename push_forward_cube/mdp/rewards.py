@@ -26,8 +26,8 @@ def ms_push_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
 
     reach_multiplier = 1.0 - torch.tanh(10.0 * tcp_to_push_pose_dist) 
     
-    obj_vel_x = env.scene["object"].data.root_lin_vel_w[:, 0]
-    push_reward = torch.tanh(3.0 * torch.clamp(obj_vel_x, min=0.0))
+    dist_to_goal = torch.clamp(0.7 - obj_pos[:, 0], min=0.0)
+    push_reward = 1.0 - torch.tanh(5.0 * dist_to_goal)
 
     return push_reward * reach_multiplier
 
