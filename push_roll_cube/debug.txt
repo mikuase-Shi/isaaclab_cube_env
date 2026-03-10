@@ -31,3 +31,18 @@
     将基于绝对静态位置的奖励，改为基于“动态连续速度”的奖励：
     1. push_forward：改为奖励方块在世界坐标系X轴方向上的线速度（linear velocity），要求智能体必须持续推动才能得分。
     2. flip_bonus：改为奖励方块的角速度（angular velocity），鼓励它持续翻滚，而不是简单地推倒躺平。
+7. 世界坐标系与局部坐标系杂糅问题：
+    问题现象：
+    在使用 mdp.root_pos_w 获取物体坐标计算位移奖励和作为观测值时，忽略了每个环境实例（env_origins）的偏移量。
+    这导致多个环境并行训练时，物体坐标相对于全局世界中心计算，从而产生巨大的偏差。
+    
+    解决方案：
+    在观测（observations.py）、奖励（rewards.py）和终止条件（terminations.py）中，统一将物体的世界坐标系位置（root_pos_w）减去环境中心位置（env_origins），转换为局部坐标系下的相对位置。
+8. Reward 设计中参考 ManiSkill 的阶段化和边界约束：
+    问题现象：
+    初始设计的奖励函数未经有界化处理，容易导致 Value Loss 爆炸。且接近目标和推动目标的奖励容易冲突。
+    
+    解决方案：
+    模仿 ManiSkill 的 Reward 设计方式：
+    1. 增加 tanh 处理：对所有奖励项使用 torch.tanh 将其有界化到 [0, 1] 范围内，稳定训练。
+    2. 分阶段处理 (Staged Rewards)：引入 reaching_reward 和 push_reward。使用 reach_multiplier 作为一个平滑的 Mask，只有当机械臂末端（EE）足够靠近目标推力点时，push_reward 才会更有效，避免因未就位而产生的错误奖励累积。
