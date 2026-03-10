@@ -147,23 +147,23 @@ class EventCfg:
 
 @configclass
 class RewardsCfg:
-    # ManiSkill-style staged dense rewards
+    # EXACT ManiSkill PushCube-v1 style. All reward functions return [0, 1].
 
-    # 1. Pre-push pose alignment — guide arm to virtual anchor behind cube
-    pre_push_distance_penalty = RewTerm(func=mdp.pre_push_distance_penalty, weight=-10.0)
+    # 1. Reaching (Weight = 2.0)
+    reaching_reward = RewTerm(func=mdp.ms_reaching_reward, weight=2.0)
 
-    # 2. Primary driving force — reward forward (X) velocity
-    push_forward_velocity = RewTerm(func=mdp.push_forward_velocity, weight=20.0)
+    # 2. Pushing forward (Weight = 3.0, only active when reached)
+    push_reward = RewTerm(func=mdp.ms_push_reward, weight=3.0)
 
-    # 3. Strict anti-lifting / anti-tipping — penalize cube Z above table
-    cube_z_lift_penalty = RewTerm(func=mdp.cube_z_lift_penalty, weight=-100.0)
+    # 3. Z-stability (Weight = 2.0, only active when reached and pushing)
+    z_stability_reward = RewTerm(func=mdp.ms_z_reward, weight=2.0)
 
-    # 4. Straight-line "rails" — penalize lateral drift (Y)
-    lateral_drift_penalty = RewTerm(func=mdp.lateral_drift_penalty, weight=-50.0)
+    # 4. Y-rail stability (Weight = 1.0)
+    y_rail_reward = RewTerm(func=mdp.ms_y_drift_penalty, weight=1.0)
 
-    # 5. Smoothness
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
-    joint_vel_l2 = RewTerm(func=mdp.joint_vel_l2, weight=-0.001)
+    # Standard small penalties for smooth joint actions
+    action_rate_penalty = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
+    joint_vel_penalty = RewTerm(func=mdp.joint_vel_l2, weight=-0.0001)
 
 @configclass
 class TerminationsCfg:
