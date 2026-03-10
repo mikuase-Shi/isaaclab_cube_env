@@ -149,14 +149,30 @@ class EventCfg:
 class RewardsCfg:
 
     reaching_penalty = RewTerm(func=mdp.ee_object_distance_penalty, weight=-10.0)
+    
     push_forward = RewTerm(
         func=mdp.object_x_velocity,
-        weight=5.0, 
+        weight=10.0, 
     )
 
-    upright_bonus = RewTerm(
-        func=mdp.object_local_z_alignment, 
-        weight=1.0,
+    upright_penalty = RewTerm(
+        func=mdp.upright_penalty, 
+        weight=-50.0,
+    )
+    
+    lateral_drift_penalty = RewTerm(
+        func=mdp.lateral_drift_penalty,
+        weight=-10.0,
+    )
+    
+    ee_orientation_penalty = RewTerm(
+        func=mdp.ee_orientation_penalty,
+        weight=-5.0,
+    )
+    
+    ee_height_penalty = RewTerm(
+        func=mdp.ee_height_penalty,
+        weight=-10.0,
     )
 
     action_rate_penalty = RewTerm(
@@ -167,11 +183,6 @@ class RewardsCfg:
     joint_vel_penalty = RewTerm(
         func=mdp.joint_vel_l2, 
         weight=-0.0001
-    )
-
-    ee_object_z_distance_penalty = RewTerm(
-        func=mdp.ee_object_z_distance_penalty,
-        weight=-2.0
     )
 
 @configclass
