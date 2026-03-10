@@ -1,73 +1,106 @@
+"""ManiSkill-style dense reward shaping for Push-Forward Cube task.
+
+Adopts the philosophy of ManiSkill's PushCube:
+- Pre-push pose alignment via virtual anchor point
+- Strict Z-axis grounding (anti-lifting/anti-tipping)
+- Forward pushing velocity reward
+- Lateral drift penalty (straight-line "rails")
+"""
+
 import torch
-import math
 from isaaclab.envs import ManagerBasedRLEnv
-import isaaclab.utils.math as math_utils
 
-def object_local_z_alignment(env: ManagerBasedRLEnv) -> torch.Tensor:
-    quat = env.scene["object"].data.root_quat_w
-    base_z = torch.zeros((quat.shape[0], 3), device=quat.device)
-    base_z[:, 2] = 1.0
-    
-    world_z_of_object = math_utils.quat_apply(quat, base_z)
-    
-    return torch.abs(world_z_of_object[:, 2])
 
-def upright_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
-    # Strict penalty for deviations of the object's Z-axis from world's Z-axis
-    z_alignment = object_local_z_alignment(env)
-    return 1.0 - z_alignment
+# -----------------------------------------------------------------------------
+# Pre-push Pose Alignment (Reaching Stage)
+# -----------------------------------------------------------------------------
 
-def lateral_drift_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
-    # Penalize movement/drift along Y-axis
-    object_pos = env.scene["object"].data.root_pos_w
-    object_lin_vel = env.scene["object"].data.root_lin_vel_w
-    
-    # Penalize both Y position deviation (from 0) and Y velocity
-    y_drift = torch.square(object_pos[:, 1]) + 0.1 * torch.square(object_lin_vel[:, 1])
-    return y_drift
 
-def ee_orientation_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
-    # Penalize deviation of EE's forward pointing axis (local Z) from world's +X-axis
-    quat = env.scene["ee_frame"].data.target_quat_w[..., 0, :]
-    base_z = torch.zeros((quat.shape[0], 3), device=quat.device)
-    base_z[:, 2] = 1.0  # EE local forward direction
-    
-    world_forward_of_ee = math_utils.quat_apply(quat, base_z)
-    
-    # We want world_forward_of_ee to be aligned with (1, 0, 0)
-    target_forward = torch.zeros_like(world_forward_of_ee)
-    target_forward[:, 0] = 1.0
-    
-    # Penalize angle difference
-    cos_theta = torch.sum(world_forward_of_ee * target_forward, dim=-1)
-    return 1.0 - cos_theta
+def pre_push_distance_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
+    """Penalize distance between EE and a virtual anchor point behind the cube.
 
-def ee_height_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
-    # Target height is around the bottom part of the block (e.g., z = 0.05)
-    # The block's center is at 0.15 initially (size z is 0.2, bottom at 0.05)
-    ee_z = env.scene["ee_frame"].data.target_pos_w[..., 0, 2]
-    target_z = 0.05
-    z_dist = torch.square(ee_z - target_z)
-    return z_dist
+    The anchor is 0.06m behind the cube along world -X, at the bottom height
+    of the cube. Guides the arm to the correct pre-push position.
 
-def object_x_velocity(env: ManagerBasedRLEnv) -> torch.Tensor:
-    # Reward the linear velocity of the object along the world X-axis
+    Returns:
+        L2 norm between EE position and virtual anchor.
+    """
+    ee_pos = env.scene["ee_frame"].data.target_pos_w[..., 0, :]
+    cube_pos = env.scene["object"].data.root_pos_w
+
+    # Anchor: 0.06m behind cube (world -X), at bottom of cube (center z=0.15, half-height=0.1 -> bottom at 0.05)
+    target_pos = cube_pos + torch.tensor([-0.06, 0.0, -0.1], device=cube_pos.device)
+
+    distance = torch.norm(ee_pos - target_pos, p=2, dim=-1)
+    return distance
+
+
+# -----------------------------------------------------------------------------
+# Z-Axis Grounding (Anti-Lifting / Anti-Tipping)
+# -----------------------------------------------------------------------------
+
+
+def cube_z_lift_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
+    """Strictly penalize cube Z above its nominal table height.
+
+    Prevents RL agents from cheating by lifting or flipping the cube.
+    Initial cube center Z is 0.15.
+
+    Returns:
+        max(0, current_cube_z - 0.15) — penalizes any upward movement.
+    """
+    cube_z = env.scene["object"].data.root_pos_w[:, 2]
+    return torch.clamp(cube_z - 0.15, min=0.0)
+
+
+# -----------------------------------------------------------------------------
+# Forward Pushing Reward (Moving Stage)
+# -----------------------------------------------------------------------------
+
+
+def push_forward_velocity(env: ManagerBasedRLEnv) -> torch.Tensor:
+    """Reward cube linear velocity along world +X axis.
+
+    Primary driving force for the push task.
+
+    Returns:
+        object_lin_vel[:, 0] (X-component of cube velocity).
+    """
     object_lin_vel = env.scene["object"].data.root_lin_vel_w
     return object_lin_vel[:, 0]
 
-def object_x_displacement(env: ManagerBasedRLEnv) -> torch.Tensor:
-    object_pos = env.scene["object"].data.root_pos_w
-    return (object_pos[:, 0] - 0.5)
 
-def ee_object_distance_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
-    # Distance penalty targeting a point slightly behind and below the center of the block
-    ee_pos = env.scene["ee_frame"].data.target_pos_w[..., 0, :]
+# -----------------------------------------------------------------------------
+# Lateral Drift Penalty (Straight-Line "Rails")
+# -----------------------------------------------------------------------------
+
+
+def lateral_drift_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
+    """Penalize Y-axis position deviation and Y-axis velocity.
+
+    Forces straight-line pushing along X. ManiSkill "rails" logic.
+
+    Returns:
+        y_drift = square(cube_pos_y) + 0.1 * square(cube_vel_y)
+    """
     object_pos = env.scene["object"].data.root_pos_w
-    
-    # Target point: -0.06m behind the object along X-axis, and near block's bottom (Z offset: -0.08)
-    target_pos = object_pos.clone()
-    target_pos[:, 0] -= 0.06
-    target_pos[:, 2] -= 0.08
-    
-    distance = torch.norm(ee_pos - target_pos, p=2, dim=-1)
-    return distance
+    object_lin_vel = env.scene["object"].data.root_lin_vel_w
+
+    y_drift = torch.square(object_pos[:, 1]) + 0.1 * torch.square(object_lin_vel[:, 1])
+    return y_drift
+
+
+# -----------------------------------------------------------------------------
+# Legacy / Auxiliary (kept for compatibility if used elsewhere)
+# -----------------------------------------------------------------------------
+
+
+def object_x_velocity(env: ManagerBasedRLEnv) -> torch.Tensor:
+    """Alias for push_forward_velocity. Reward object velocity along +X."""
+    return push_forward_velocity(env)
+
+
+def object_x_displacement(env: ManagerBasedRLEnv) -> torch.Tensor:
+    """Object X position minus 0.5 (initial X)."""
+    object_pos = env.scene["object"].data.root_pos_w
+    return object_pos[:, 0] - 0.5

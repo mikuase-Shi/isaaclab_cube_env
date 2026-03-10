@@ -71,8 +71,8 @@ class PushSceneCfg(InteractiveSceneCfg):
             rigid_props=sim_utils.RigidBodyPropertiesCfg(kinematic_enabled=True),
             physics_material=sim_utils.RigidBodyMaterialCfg(
                 #changable parameters,depend on inferences
-                static_friction=0.5,
-                dynamic_friction=0.5,
+                static_friction=0.1,
+                dynamic_friction=0.1,
                 ###
                 restitution=0.0
             ),
@@ -147,43 +147,23 @@ class EventCfg:
 
 @configclass
 class RewardsCfg:
+    # ManiSkill-style staged dense rewards
 
-    reaching_penalty = RewTerm(func=mdp.ee_object_distance_penalty, weight=-10.0)
-    
-    push_forward = RewTerm(
-        func=mdp.object_x_velocity,
-        weight=10.0, 
-    )
+    # 1. Pre-push pose alignment — guide arm to virtual anchor behind cube
+    pre_push_distance_penalty = RewTerm(func=mdp.pre_push_distance_penalty, weight=-10.0)
 
-    upright_penalty = RewTerm(
-        func=mdp.upright_penalty, 
-        weight=-50.0,
-    )
-    
-    lateral_drift_penalty = RewTerm(
-        func=mdp.lateral_drift_penalty,
-        weight=-10.0,
-    )
-    
-    ee_orientation_penalty = RewTerm(
-        func=mdp.ee_orientation_penalty,
-        weight=-5.0,
-    )
-    
-    ee_height_penalty = RewTerm(
-        func=mdp.ee_height_penalty,
-        weight=-10.0,
-    )
+    # 2. Primary driving force — reward forward (X) velocity
+    push_forward_velocity = RewTerm(func=mdp.push_forward_velocity, weight=20.0)
 
-    action_rate_penalty = RewTerm(
-        func=mdp.action_rate_l2, 
-        weight=-0.01
-    )
-    
-    joint_vel_penalty = RewTerm(
-        func=mdp.joint_vel_l2, 
-        weight=-0.0001
-    )
+    # 3. Strict anti-lifting / anti-tipping — penalize cube Z above table
+    cube_z_lift_penalty = RewTerm(func=mdp.cube_z_lift_penalty, weight=-100.0)
+
+    # 4. Straight-line "rails" — penalize lateral drift (Y)
+    lateral_drift_penalty = RewTerm(func=mdp.lateral_drift_penalty, weight=-50.0)
+
+    # 5. Smoothness
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
+    joint_vel_l2 = RewTerm(func=mdp.joint_vel_l2, weight=-0.001)
 
 @configclass
 class TerminationsCfg:
