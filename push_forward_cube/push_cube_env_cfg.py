@@ -42,7 +42,7 @@ class PushSceneCfg(InteractiveSceneCfg):
             rot=(1.0,0.0,0.0,0.0)
         ),
         spawn=sim_utils.CuboidCfg(
-            size=(0.1,0.1,0.2),
+            size=(0.15,0.15,0.15),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             #give this cube a different height to distinguish 6 faces
             #it may help in the reward function designing
@@ -109,7 +109,8 @@ class ObservationsCfg:
         actions=ObsTerm(func=mdp.last_action)
 
         rel_ee_object_distance=ObsTerm(func=mdp.rel_ee_object_distance)
-        object_pos=ObsTerm(func=mdp.root_pos_w,params={"asset_cfg":SceneEntityCfg("object")})
+        # 把 func=mdp.root_pos_w 替换成你刚刚写的局部函数
+        object_pos=ObsTerm(func=mdp.object_local_pos_obs, params={"asset_cfg":SceneEntityCfg("object")})
         object_quat=ObsTerm(func=mdp.root_quat_w,params={"asset_cfg":SceneEntityCfg("object")})
 
         object_alignment_radar=ObsTerm(func=mdp.object_local_z_alignment_obs)

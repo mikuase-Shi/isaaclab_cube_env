@@ -24,12 +24,12 @@ def ms_push_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
     tcp_push_pose[:, 2] -= 0.05
     tcp_to_push_pose_dist = torch.norm(tcp_push_pose - ee_pos, p=2, dim=-1)
 
-    reached = tcp_to_push_pose_dist < 0.05  # Mask
-
+    reach_multiplier = 1.0 - torch.tanh(10.0 * tcp_to_push_pose_dist) 
+    
     obj_vel_x = env.scene["object"].data.root_lin_vel_w[:, 0]
     push_reward = torch.tanh(3.0 * torch.clamp(obj_vel_x, min=0.0))
 
-    return push_reward * reached.float()
+    return push_reward * reach_multiplier
 
 
 def ms_z_reward(env: ManagerBasedRLEnv) -> torch.Tensor:

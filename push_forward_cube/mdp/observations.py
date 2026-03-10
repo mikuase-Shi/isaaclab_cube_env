@@ -1,5 +1,6 @@
 import torch
 from isaaclab.envs import ManagerBasedRLEnv
+from isaaclab.managers import SceneEntityCfg
 import isaaclab.utils.math as math_utils
 
 def rel_ee_object_distance(env:ManagerBasedRLEnv)->torch.Tensor:
@@ -21,3 +22,10 @@ def object_x_displacement_obs(env: ManagerBasedRLEnv) -> torch.Tensor:
     object_pos_local_x = object_pos_w[:, 0] - env_origins[:, 0]
     
     return (object_pos_local_x - 0.5).unsqueeze(-1)
+
+def object_local_pos_obs(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+    asset = env.scene[asset_cfg.name]
+    object_pos_w = asset.data.root_pos_w
+    env_origins = env.scene.env_origins
+    # 相减得到局部坐标
+    return object_pos_w - env_origins
