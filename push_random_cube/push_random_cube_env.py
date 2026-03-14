@@ -60,18 +60,18 @@ class PushSceneCfg(InteractiveSceneCfg):
         ),
     )
 
-    goal: AssetBaseCfg = AssetBaseCfg(
+    goal: RigidObjectCfg = RigidObjectCfg(
         prim_path="{ENV_REGEX_NS}/Goal",
-        init_state=AssetBaseCfg.InitialStateCfg(
+        init_state=RigidObjectCfg.InitialStateCfg( 
             pos=(0.7, 0.0, 0.15),
             rot=(1.0, 0.0, 0.0, 0.0)
         ),
         spawn=sim_utils.CuboidCfg(
             size=(0.15, 0.15, 0.15),
-            # No collision properties so the robot/cube can pass through it
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(kinematic_enabled=True),
             visual_material=sim_utils.PreviewSurfaceCfg(
                 diffuse_color=(0.0, 0.0, 1.0),
-                opacity=0.3  # Semi-transparent blue ghost cube
+                opacity=0.3  
             ),
         ),
     )
@@ -198,12 +198,14 @@ class EventCfg:
     )
 
     randomize_object_friction = EventTerm(
-        func=mdp.randomize_rigid_body_material_friction,
+        func=mdp.randomize_rigid_body_material,
         mode="reset",
         params={
             "asset_cfg": SceneEntityCfg("object"),
-            "friction_distribution_params": (0.5, 1.2), # Randomize friction
-            "operation": "scale",
+            "static_friction_range": (0.5, 1.2),
+            "dynamic_friction_range": (0.5, 1.2),
+            "restitution_range": (0.0, 0.0), 
+            "num_buckets": 250,
         },
     )
 
