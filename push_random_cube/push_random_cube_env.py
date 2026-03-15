@@ -198,9 +198,21 @@ class EventCfg:
 class RewardsCfg:
     reaching_reward = RewTerm(func=mdp.ms_reaching_reward, weight=2.0)
 
-    # Use the new goal-oriented push reward
+    # Goal position (higher sensitivity tanh(10*d))
     goal_reaching_reward = RewTerm(func=mdp.ms_goal_reaching_reward, weight=15.0)
+    # Fine position: last 1--2 cm (active when dist < 3 cm)
+    fine_position_reward = RewTerm(func=mdp.ms_fine_position_reward, weight=15.0)
+    # Per-axis for clear X/Y micro-adjustment
+    goal_pos_x_reward = RewTerm(func=mdp.ms_goal_pos_x_reward, weight=5.0)
+    goal_pos_y_reward = RewTerm(func=mdp.ms_goal_pos_y_reward, weight=5.0)
+
+    # Orientation: stronger sensitivity, only within 5 cm
     goal_alignment_reward = RewTerm(func=mdp.ms_goal_alignment_reward, weight=15.0)
+    # Fine angle tuning when dist < 2 cm
+    fine_alignment_reward = RewTerm(func=mdp.ms_fine_alignment_reward, weight=8.0)
+
+    # Encourage settling near goal (penalize velocity when close)
+    near_goal_vel_penalty = RewTerm(func=mdp.ms_near_goal_vel_penalty, weight=-1.0)
 
     z_stability_reward = RewTerm(func=mdp.ms_z_reward, weight=2.0)
 
@@ -216,7 +228,7 @@ class TerminationsCfg:
     )
     task_success = DoneTerm(
         func=mdp.object_reached_goal,
-        params={"pos_threshold": 0.05, "rot_threshold": 0.2}
+        params={"pos_threshold": 0.02, "rot_threshold": 0.1}
     )
 
 
