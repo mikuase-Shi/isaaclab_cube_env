@@ -191,28 +191,6 @@ class EventCfg:
         },
     )
 
-    randomize_object_mass = EventTerm(
-        func=mdp.randomize_rigid_body_mass,
-        mode="reset",
-        params={
-            "asset_cfg": SceneEntityCfg("object"),
-            "mass_distribution_params": (0.05, 0.2),  # Randomize mass between 0.05kg and 0.2kg
-            "operation": "scale"
-        },
-    )
-
-    randomize_object_friction = EventTerm(
-        func=mdp.randomize_rigid_body_material,
-        mode="reset",
-        params={
-            "asset_cfg": SceneEntityCfg("object"),
-            "static_friction_range": (0.5, 1.2),
-            "dynamic_friction_range": (0.5, 1.2),
-            "restitution_range": (0.0, 0.0), 
-            "num_buckets": 250,
-        },
-    )
-
 
 @configclass
 class RewardsCfg:
