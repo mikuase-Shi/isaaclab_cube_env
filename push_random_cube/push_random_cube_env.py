@@ -67,12 +67,12 @@ class PushSceneCfg(InteractiveSceneCfg):
          rot=(1.0, 0.0, 0.0, 0.0)
         ),
      spawn=sim_utils.CuboidCfg(
-         size=(0.15, 0.15, 0.002), # 变成极薄的贴纸
+         size=(0.15, 0.15, 0.01), # 变成极薄的贴纸
          rigid_props=sim_utils.RigidBodyPropertiesCfg(
              kinematic_enabled=True,
              disable_gravity=True
             ),
-         mass_props=sim_utils.MassPropertiesCfg(mass=0.001),
+         mass_props=sim_utils.MassPropertiesCfg(mass=0.1),
          visual_material=sim_utils.PreviewSurfaceCfg(
              diffuse_color=(0.0, 0.8, 0.0) # 显眼的绿色目标区
             ),
