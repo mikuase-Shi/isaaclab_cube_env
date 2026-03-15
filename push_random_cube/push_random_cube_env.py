@@ -61,17 +61,20 @@ class PushSceneCfg(InteractiveSceneCfg):
     )
 
     goal: RigidObjectCfg = RigidObjectCfg(
-        prim_path="{ENV_REGEX_NS}/Goal",
-        init_state=RigidObjectCfg.InitialStateCfg( 
-            pos=(0.7, 0.0, 0.15),
-            rot=(1.0, 0.0, 0.0, 0.0)
+     prim_path="{ENV_REGEX_NS}/Goal",
+     init_state=RigidObjectCfg.InitialStateCfg(
+         pos=(0.7, 0.0, 0.011),  # 刚好在桌面 (Z=0.01) 上方 1mm，防止深度冲突(Z-fighting)
+         rot=(1.0, 0.0, 0.0, 0.0)
         ),
-        spawn=sim_utils.CuboidCfg(
-            size=(0.15, 0.15, 0.15),
-            rigid_props=sim_utils.RigidBodyPropertiesCfg(kinematic_enabled=True),
-            visual_material=sim_utils.PreviewSurfaceCfg(
-                diffuse_color=(0.0, 0.0, 1.0),
-                opacity=0.3  
+     spawn=sim_utils.CuboidCfg(
+         size=(0.15, 0.15, 0.002), # 变成极薄的贴纸
+         rigid_props=sim_utils.RigidBodyPropertiesCfg(
+             kinematic_enabled=True,
+             disable_gravity=True
+            ),
+         mass_props=sim_utils.MassPropertiesCfg(mass=0.001),
+         visual_material=sim_utils.PreviewSurfaceCfg(
+             diffuse_color=(0.0, 0.8, 0.0) # 显眼的绿色目标区
             ),
         ),
     )
@@ -173,12 +176,13 @@ class EventCfg:
         mode="reset",
         params={
             "asset_cfg":SceneEntityCfg("goal"),
-            "pose_range":{
-                "x":(0.6, 0.8),
-                "y":(-0.2, 0.2),
-                "roll":(0.0, 0.0), 
-                "pitch":(0.0, 0.0),
-                "yaw":(-math.pi/2, math.pi/2)
+            "pose_range": {
+             "x": (0.6, 0.8),
+             "y": (-0.2, 0.2),
+             "z": (0.011, 0.011), # 锁定在桌面高度
+             "roll": (0.0, 0.0), 
+             "pitch": (0.0, 0.0),
+             "yaw": (-math.pi/2, math.pi/2)
             },
             "velocity_range": {
                 "x": (0.0, 0.0), "y": (0.0, 0.0), "z": (0.0, 0.0),
