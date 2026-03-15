@@ -28,8 +28,8 @@ def ms_goal_reaching_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
     reach_multiplier = 1.0 - torch.tanh(10.0 * tcp_to_push_pose_dist) 
     
     # Distance to goal
-    dist_to_goal = torch.norm(goal_pos - obj_pos, p=2, dim=-1)
-    push_reward = 1.0 - torch.tanh(5.0 * dist_to_goal)
+    dist_to_goal_2d = torch.norm(goal_pos[:, :2] - obj_pos[:, :2], p=2, dim=-1)
+    push_reward = 1.0 - torch.tanh(5.0 * dist_to_goal_2d)
 
     return push_reward * reach_multiplier
 
@@ -42,8 +42,8 @@ def ms_goal_alignment_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
     goal_pos = env.scene["goal"].data.root_pos_w
     
     # Only reward alignment when close to the goal (e.g. within 10cm)
-    dist_to_goal = torch.norm(goal_pos - obj_pos, p=2, dim=-1)
-    close_to_goal_multiplier = 1.0 - torch.tanh(10.0 * dist_to_goal)
+    dist_to_goal_2d = torch.norm(goal_pos[:, :2] - obj_pos[:, :2], p=2, dim=-1)
+    close_to_goal_multiplier = 1.0 - torch.tanh(10.0 * dist_to_goal_2d)
     
     # Calculate Z-axis rotation difference
     # q_diff = q_obj^{-1} * q_goal

@@ -198,7 +198,7 @@ class RewardsCfg:
 
     # Use the new goal-oriented push reward
     goal_reaching_reward = RewTerm(func=mdp.ms_goal_reaching_reward, weight=15.0)
-    goal_alignment_reward = RewTerm(func=mdp.ms_goal_alignment_reward, weight=5.0)
+    goal_alignment_reward = RewTerm(func=mdp.ms_goal_alignment_reward, weight=15.0)
 
     z_stability_reward = RewTerm(func=mdp.ms_z_reward, weight=2.0)
 
