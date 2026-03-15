@@ -93,8 +93,8 @@ class PushSceneCfg(InteractiveSceneCfg):
             rigid_props=sim_utils.RigidBodyPropertiesCfg(kinematic_enabled=True),
             physics_material=sim_utils.RigidBodyMaterialCfg(
                 #changable parameters,depend on inferences
-                static_friction=0.1,
-                dynamic_friction=0.1,
+                static_friction=0.5,
+                dynamic_friction=0.5,
                 ###
                 restitution=0.0
             ),
@@ -117,7 +117,7 @@ class ActionsCfg:
     arm_action:mdp.JointPositionActionCfg=mdp.JointPositionActionCfg(
         asset_name="robot",
         joint_names=["panda_joint.*"],
-        scale=0.1,
+        scale=0.2,
         use_default_offset=True,
         #from https://github.com/isaac-sim/IsaacLab/blob/main/source/isaaclab_tasks/isaaclab_tasks/manager_based/manipulation/cabinet/config/franka/joint_pos_env_cfg.py
     )
@@ -196,7 +196,7 @@ class EventCfg:
 
 @configclass
 class RewardsCfg:
-    reaching_reward = RewTerm(func=mdp.ms_reaching_reward, weight=2.0)
+    reaching_reward = RewTerm(func=mdp.ms_reaching_reward, weight=10.0)
 
     # Goal position (higher sensitivity tanh(10*d))
     goal_reaching_reward = RewTerm(func=mdp.ms_goal_reaching_reward, weight=15.0)
