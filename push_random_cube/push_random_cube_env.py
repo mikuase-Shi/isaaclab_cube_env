@@ -44,9 +44,6 @@ class PushSceneCfg(InteractiveSceneCfg):
         ),
         spawn=sim_utils.CuboidCfg(
             size=(0.15,0.15,0.15),
-            collision_props=sim_utils.CollisionPropertiesCfg(
-             collision_enabled=False
-            ),
             #give this cube a different height to distinguish 6 faces
             #it may help in the reward function designing
             rigid_props=sim_utils.RigidBodyPropertiesCfg(
@@ -70,6 +67,9 @@ class PushSceneCfg(InteractiveSceneCfg):
         ),
      spawn=sim_utils.CuboidCfg(
          size=(0.15, 0.15, 0.01), # 变成极薄的贴纸
+         collision_props=sim_utils.CollisionPropertiesCfg(
+             collision_enabled=False
+            ),
          rigid_props=sim_utils.RigidBodyPropertiesCfg(
              kinematic_enabled=True,
              disable_gravity=True
