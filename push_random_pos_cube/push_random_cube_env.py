@@ -44,6 +44,7 @@ class PushSceneCfg(InteractiveSceneCfg):
         ),
         spawn=sim_utils.CuboidCfg(
             size=(0.15,0.15,0.15),
+            collision_props=sim_utils.CollisionPropertiesCfg(),
             #give this cube a different height to distinguish 6 faces
             #it may help in the reward function designing
             rigid_props=sim_utils.RigidBodyPropertiesCfg(
