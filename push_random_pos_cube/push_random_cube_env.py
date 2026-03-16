@@ -206,8 +206,9 @@ class RewardsCfg:
     goal_pos_x_reward = RewTerm(func=mdp.ms_goal_pos_x_reward, weight=5.0)
     goal_pos_y_reward = RewTerm(func=mdp.ms_goal_pos_y_reward, weight=5.0)
 
-    # 3) Encourage settling near goal (penalize velocity when close)
+    # 3) 接近目标后收手：近处速度惩罚 + 远离目标方向的速度惩罚
     near_goal_vel_penalty = RewTerm(func=mdp.ms_near_goal_vel_penalty, weight=-1.0)
+    overshoot_penalty = RewTerm(func=mdp.ms_overshoot_penalty, weight=-2.0)
 
     # 4) Z stability (no rotation shaping)
     z_stability_reward = RewTerm(func=mdp.ms_z_reward, weight=2.0)
@@ -223,9 +224,10 @@ class TerminationsCfg:
         func=mdp.root_height_below_minimum,
         params={"minimum_height": -0.1, "asset_cfg": SceneEntityCfg("object")}
     )
+    # 一到就结束：用略大一点的半径(0.04m)提前判定成功，减少过度推过再判到
     task_success = DoneTerm(
         func=mdp.object_reached_goal,
-        params={"pos_threshold": 0.02, "rot_threshold": 0.1}
+        params={"pos_threshold": 0.04, "rot_threshold": 0.1}
     )
 
 

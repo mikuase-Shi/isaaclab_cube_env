@@ -117,6 +117,22 @@ def ms_near_goal_vel_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
     return vel_xy * close_mask  # positive value -> use negative weight in cfg
 
 
+def ms_overshoot_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
+    """Penalize moving away from goal when already close (促使到了就收手)."""
+    obj_pos = env.scene["object"].data.root_pos_w
+    goal_pos = env.scene["goal"].data.root_pos_w
+    obj_lin_vel = env.scene["object"].data.root_lin_vel_w
+    dist_to_goal_2d = _get_dist_to_goal_2d(env)
+    # 从目标指向物体的单位向量
+    to_obj = obj_pos[:, :2] - goal_pos[:, :2]
+    to_obj_norm = torch.norm(to_obj, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
+    to_obj_unit = to_obj / to_obj_norm
+    # 物体速度在“远离目标”方向上的分量（正值 = 正在远离）
+    vel_away = (obj_lin_vel[:, :2] * to_obj_unit).sum(dim=-1).clamp(min=0.0)
+    close_mask = (dist_to_goal_2d < 0.06).float()
+    return vel_away * close_mask  # 用负权重，越远离越罚
+
+
 def ms_z_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
     """Z-stability when reached and pushing (no rotation requirements)."""
     ee_pos = env.scene["ee_frame"].data.target_pos_w[..., 0, :]
