@@ -1,11 +1,3 @@
-"""Rewards for random-position cube pushing with stable gradients.
-
-- Dynamic push pose: aligned with object→goal direction.
-- Position-only goal shaping (XY), no orientation terms.
-- Phase-aware goal reward: different shaping per distance phase (far/mid/near).
-- Stationary reward: encourages object to stop when close to goal.
-"""
-
 import torch
 from isaaclab.envs import ManagerBasedRLEnv
 
@@ -52,24 +44,12 @@ def ms_reaching_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
 
 
 def ms_phased_goal_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """Unified goal reward — no phase boundaries.
-
-    R = (1 - tanh(3 * dist)) * reach_multiplier
-    Smooth everywhere, no distance gates, no dead zones.
-    """
     reach_multiplier = _get_reach_multiplier(env)
     dist = _get_dist_to_goal_2d(env)
     return (1.0 - torch.tanh(3.0 * dist)) * reach_multiplier
 
 
 def ms_stationary_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """Reward the object for being stationary when close to the goal.
-
-    R = exp(-3 * speed_xy), peaks at 1 when stopped, decays as object moves.
-    Gated by two distance rings so the reward only fires near the goal:
-      - Within 0.08m: base gate (weight 1x)
-      - Within 0.04m: extra gate (another 1x, total 2x bonus for being close AND still)
-    """
     dist = _get_dist_to_goal_2d(env)
     speed_xy = torch.norm(env.scene["object"].data.root_lin_vel_w[:, :2], p=2, dim=-1)
 
