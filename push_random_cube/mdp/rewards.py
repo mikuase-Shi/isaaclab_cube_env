@@ -77,29 +77,29 @@ def ms_phased_goal_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
 def ms_stationary_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
     """Reward the object for being stationary when close to the goal.
 
-    R = exp(-3 * speed_xy), peaks at 1 when stopped, decays as object moves.
-    Gated by two distance rings so the reward only fires near the goal:
-      - Within 0.08m: base gate (weight 1x)
-      - Within 0.04m: extra gate (another 1x, total 2x bonus for being close AND still)
+    Modified: Also requires reasonable orientation alignment to prevent
+    the agent from 'parking' with the wrong heading.
     """
     dist = _get_dist_to_goal_2d(env)
+    angle = _get_angle_diff_to_goal(env)
     speed_xy = torch.norm(env.scene["object"].data.root_lin_vel_w[:, :2], p=2, dim=-1)
 
-    gate_mid  = (dist < 0.08).float()
-    gate_near = (dist < 0.04).float()
+    # Pos gate: must be within 8cm
+    pos_gate = (dist < 0.08).float()
+    # Rot gate: full reward at 0, decays to 0 at ~0.3 radians (~17 deg)
+    rot_gate = torch.clamp(1.0 - angle / 0.3, 0.0, 1.0)
+    
     stop_reward = torch.exp(-3.0 * speed_xy)
-    return stop_reward * (gate_mid + gate_near)
+    return stop_reward * pos_gate * rot_gate
 
 
 def ms_goal_alignment_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """Orientation alignment reward, gated by proximity (within 5cm of goal).
+    """Orientation alignment reward, gated by proximity (within 10cm of goal).
 
-    R = (1 - tanh(8 * angle_diff)) * clamp(1 - dist/0.05, 0, 1)
-    Only fires when object is close to goal in XY, so the robot focuses on
-    position first, then orientation.
+    R = (1 - tanh(8 * angle_diff)) * clamp(1 - dist/0.10, 0, 1)
     """
     dist = _get_dist_to_goal_2d(env)
-    close_to_goal_multiplier = torch.clamp(1.0 - dist / 0.05, 0.0, 1.0)
+    close_to_goal_multiplier = torch.clamp(1.0 - dist / 0.10, 0.0, 1.0)
     angle_diff = _get_angle_diff_to_goal(env)
     alignment_reward = 1.0 - torch.tanh(8.0 * angle_diff)
     return alignment_reward * close_to_goal_multiplier
