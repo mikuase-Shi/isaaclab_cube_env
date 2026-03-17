@@ -52,31 +52,14 @@ def ms_reaching_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
 
 
 def ms_phased_goal_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """Phase-aware goal reward with 3 distance zones:
+    """Unified goal reward — no phase boundaries.
 
-    - Far  (dist >= 0.15m): linear shaping [0,1], no reach-multiplier so robot
-      learns to move the object first without worrying about ee-alignment.
-    - Mid  (0.05 <= dist < 0.15m): tanh(2*dist) * reach_multiplier —
-      smoother gradient that also rewards correct push stance.
-    - Near (dist < 0.05m): tanh(20*dist) * reach_multiplier — very steep
-      gradient that strongly rewards closing the last centimetres.
+    R = (1 - tanh(3 * dist)) * reach_multiplier
+    Smooth everywhere, no distance gates, no dead zones.
     """
     reach_multiplier = _get_reach_multiplier(env)
     dist = _get_dist_to_goal_2d(env)
-
-    far_mask  = dist >= 0.15
-    mid_mask  = (dist >= 0.05) & ~far_mask
-    near_mask = dist < 0.05
-
-    far_reward  = 1.0 - torch.clamp(dist / 0.5, 0.0, 1.0)
-    mid_reward  = (1.0 - torch.tanh(2.0  * dist)) * reach_multiplier
-    near_reward = (1.0 - torch.tanh(20.0 * dist)) * reach_multiplier
-
-    return (
-        far_mask.float()  * far_reward  +
-        mid_mask.float()  * mid_reward  +
-        near_mask.float() * near_reward
-    )
+    return (1.0 - torch.tanh(3.0 * dist)) * reach_multiplier
 
 
 def ms_stationary_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
@@ -96,11 +79,6 @@ def ms_stationary_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
     return stop_reward * (gate_mid + gate_near)
 
 
-def ms_fine_position_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
-    dist_to_goal_2d = _get_dist_to_goal_2d(env)
-    fine_reward = 1.0 - torch.tanh(10.0 * dist_to_goal_2d)
-    close_mask = (dist_to_goal_2d < 0.03).float()
-    return fine_reward * close_mask
 
 
 def ms_goal_pos_x_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
