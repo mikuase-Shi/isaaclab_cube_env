@@ -10,12 +10,6 @@ from isaaclab.envs import ManagerBasedRLEnv
 
 
 def _get_tcp_push_pose(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """Compute push pose dynamically along the object→goal direction.
-
-    - Direction is from object to goal in XY.
-    - We go 0.055m *behind* the cube along the negative direction.
-    - Z is set to lower part of the cube (center z - 0.05).
-    """
     obj_pos = env.scene["object"].data.root_pos_w
     goal_pos = env.scene["goal"].data.root_pos_w
 
@@ -41,10 +35,6 @@ def _get_tcp_push_pose(env: ManagerBasedRLEnv) -> torch.Tensor:
 
 
 def _get_reach_multiplier(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """EE close to push pose: 1 - tanh(5 * dist).
-
-    Softer scaling than 10x to avoid vanishing gradient.
-    """
     ee_pos = env.scene["ee_frame"].data.target_pos_w[..., 0, :]
     tcp_push_pose = _get_tcp_push_pose(env)
     tcp_to_push_pose_dist = torch.norm(tcp_push_pose - ee_pos, p=2, dim=-1)
@@ -58,7 +48,6 @@ def _get_dist_to_goal_2d(env: ManagerBasedRLEnv) -> torch.Tensor:
 
 
 def ms_reaching_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """EE to dynamic push pose behind cube. Bounded [0, 1]."""
     ee_pos = env.scene["ee_frame"].data.target_pos_w[..., 0, :]
     tcp_push_pose = _get_tcp_push_pose(env)
     tcp_to_push_pose_dist = torch.norm(tcp_push_pose - ee_pos, p=2, dim=-1)
@@ -66,7 +55,6 @@ def ms_reaching_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
 
 
 def ms_goal_reaching_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """Main goal position reward with far/near shaping to avoid vanishing gradients."""
     reach_multiplier = _get_reach_multiplier(env)
     dist_to_goal_2d = _get_dist_to_goal_2d(env)
 
@@ -85,7 +73,6 @@ def ms_goal_reaching_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
 
 
 def ms_fine_position_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """Fine-tuning: only when dist_2d < 0.03, strong gradient for last centimeters."""
     dist_to_goal_2d = _get_dist_to_goal_2d(env)
     fine_reward = 1.0 - torch.tanh(10.0 * dist_to_goal_2d)
     close_mask = (dist_to_goal_2d < 0.03).float()
@@ -93,7 +80,6 @@ def ms_fine_position_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
 
 
 def ms_goal_pos_x_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """Per-axis: reward for X alignment with goal (position only)."""
     obj_pos = env.scene["object"].data.root_pos_w
     goal_pos = env.scene["goal"].data.root_pos_w
     dx = torch.abs(goal_pos[:, 0] - obj_pos[:, 0])
@@ -101,7 +87,6 @@ def ms_goal_pos_x_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
 
 
 def ms_goal_pos_y_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """Per-axis: reward for Y alignment with goal (position only)."""
     obj_pos = env.scene["object"].data.root_pos_w
     goal_pos = env.scene["goal"].data.root_pos_w
     dy = torch.abs(goal_pos[:, 1] - obj_pos[:, 1])
@@ -109,7 +94,6 @@ def ms_goal_pos_y_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
 
 
 def ms_near_goal_vel_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """Penalize object XY velocity when close to goal to encourage settling."""
     dist_to_goal_2d = _get_dist_to_goal_2d(env)
     obj_lin_vel = env.scene["object"].data.root_lin_vel_w
     vel_xy = torch.norm(obj_lin_vel[:, :2], p=2, dim=-1)
@@ -122,7 +106,6 @@ def ms_near_goal_vel_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
 
 
 def ms_overshoot_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """Penalize moving away from goal when already close."""
     obj_pos = env.scene["object"].data.root_pos_w
     goal_pos = env.scene["goal"].data.root_pos_w
     obj_lin_vel = env.scene["object"].data.root_lin_vel_w
@@ -143,7 +126,6 @@ def ms_overshoot_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
 
 
 def ms_z_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """Z-stability reward to keep cube flat on the table."""
     obj_pos = env.scene["object"].data.root_pos_w
     
     # Target height (COM) is roughly 0.15m if tabletop is at 0.02 and cube size is 0.15
