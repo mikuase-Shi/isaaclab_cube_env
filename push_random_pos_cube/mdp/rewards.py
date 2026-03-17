@@ -113,40 +113,43 @@ def ms_near_goal_vel_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
     dist_to_goal_2d = _get_dist_to_goal_2d(env)
     obj_lin_vel = env.scene["object"].data.root_lin_vel_w
     vel_xy = torch.norm(obj_lin_vel[:, :2], p=2, dim=-1)
+    
+    # Increase penalty intensity when very close (< 0.04m)
     close_mask = (dist_to_goal_2d < 0.05).float()
-    return vel_xy * close_mask  # positive value -> use negative weight in cfg
+    very_close_mask = (dist_to_goal_2d < 0.02).float()
+    
+    return vel_xy * (close_mask + very_close_mask)
 
 
 def ms_overshoot_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """Penalize moving away from goal when already close (促使到了就收手)."""
+    """Penalize moving away from goal when already close."""
     obj_pos = env.scene["object"].data.root_pos_w
     goal_pos = env.scene["goal"].data.root_pos_w
     obj_lin_vel = env.scene["object"].data.root_lin_vel_w
     dist_to_goal_2d = _get_dist_to_goal_2d(env)
-    # 从目标指向物体的单位向量
+
+    # Unit vector from goal to object
     to_obj = obj_pos[:, :2] - goal_pos[:, :2]
     to_obj_norm = torch.norm(to_obj, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
     to_obj_unit = to_obj / to_obj_norm
-    # 物体速度在“远离目标”方向上的分量（正值 = 正在远离）
+
+    # Velocity component moving AWAY from the goal
+    # (Positive value means velocity vector has a component in goal->obj direction)
     vel_away = (obj_lin_vel[:, :2] * to_obj_unit).sum(dim=-1).clamp(min=0.0)
+
+    # Apply penalty when within 6cm of the goal
     close_mask = (dist_to_goal_2d < 0.06).float()
-    return vel_away * close_mask  # 用负权重，越远离越罚
+    return vel_away * close_mask
 
 
 def ms_z_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """Z-stability when reached and pushing (no rotation requirements)."""
-    ee_pos = env.scene["ee_frame"].data.target_pos_w[..., 0, :]
+    """Z-stability reward to keep cube flat on the table."""
     obj_pos = env.scene["object"].data.root_pos_w
-    tcp_push_pose = _get_tcp_push_pose(env)
-    tcp_to_push_pose_dist = torch.norm(tcp_push_pose - ee_pos, p=2, dim=-1)
-    reached = tcp_to_push_pose_dist < 0.05
-
-    obj_vel_x = env.scene["object"].data.root_lin_vel_w[:, 0]
-    push_reward = torch.tanh(3.0 * torch.clamp(obj_vel_x, min=0.0))
-
-    desired_obj_z = 0.15
+    
+    # Target height (COM) is roughly 0.15m if tabletop is at 0.02 and cube size is 0.15
+    # Let's keep it simple and reward staying at the initial height
     current_obj_z = obj_pos[:, 2]
-    z_deviation = torch.abs(current_obj_z - desired_obj_z)
+    z_deviation = torch.abs(current_obj_z - 0.15) 
     z_reward = 1.0 - torch.tanh(10.0 * z_deviation)
 
-    return push_reward * z_reward * reached.float()
+    return z_reward
