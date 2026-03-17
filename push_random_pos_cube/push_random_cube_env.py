@@ -221,7 +221,7 @@ class TerminationsCfg:
     )
     task_success = DoneTerm(
         func=mdp.object_reached_goal,
-        params={"pos_threshold": 0.04, "rot_threshold": 0.1}
+        params={"pos_threshold": 0.02, "rot_threshold": 0.1}
     )
 
 
