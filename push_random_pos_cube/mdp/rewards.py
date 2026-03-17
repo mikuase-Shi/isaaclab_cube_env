@@ -2,7 +2,8 @@
 
 - Dynamic push pose: aligned with object→goal direction.
 - Position-only goal shaping (XY), no orientation terms.
-- Far distances use linear shaping; near goal use tanh for smoothness.
+- Phase-aware goal reward: different shaping per distance phase (far/mid/near).
+- Stationary reward: encourages object to stop when close to goal.
 """
 
 import torch
@@ -50,19 +51,49 @@ def ms_reaching_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
     return 1.0 - torch.tanh(5.0 * tcp_to_push_pose_dist)
 
 
-def ms_goal_reaching_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
+def ms_phased_goal_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
+    """Phase-aware goal reward with 3 distance zones:
+
+    - Far  (dist >= 0.15m): linear shaping [0,1], no reach-multiplier so robot
+      learns to move the object first without worrying about ee-alignment.
+    - Mid  (0.05 <= dist < 0.15m): tanh(2*dist) * reach_multiplier —
+      smoother gradient that also rewards correct push stance.
+    - Near (dist < 0.05m): tanh(20*dist) * reach_multiplier — very steep
+      gradient that strongly rewards closing the last centimetres.
+    """
     reach_multiplier = _get_reach_multiplier(env)
-    dist_to_goal_2d = _get_dist_to_goal_2d(env)
+    dist = _get_dist_to_goal_2d(env)
 
-    far_mask = dist_to_goal_2d >= 0.1
-    near_mask = ~far_mask
+    far_mask  = dist >= 0.15
+    mid_mask  = (dist >= 0.05) & ~far_mask
+    near_mask = dist < 0.05
 
-    far_reward = 1.0 - torch.clamp(dist_to_goal_2d / 0.5, min=0.0, max=1.0)
+    far_reward  = 1.0 - torch.clamp(dist / 0.5, 0.0, 1.0)
+    mid_reward  = (1.0 - torch.tanh(2.0  * dist)) * reach_multiplier
+    near_reward = (1.0 - torch.tanh(20.0 * dist)) * reach_multiplier
 
-    near_reward = 1.0 - torch.tanh(2.0 * dist_to_goal_2d)
+    return (
+        far_mask.float()  * far_reward  +
+        mid_mask.float()  * mid_reward  +
+        near_mask.float() * near_reward
+    )
 
-    push_reward = torch.where(far_mask, far_reward, near_reward)
-    return push_reward * reach_multiplier
+
+def ms_stationary_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
+    """Reward the object for being stationary when close to the goal.
+
+    R = exp(-3 * speed_xy), peaks at 1 when stopped, decays as object moves.
+    Gated by two distance rings so the reward only fires near the goal:
+      - Within 0.08m: base gate (weight 1x)
+      - Within 0.04m: extra gate (another 1x, total 2x bonus for being close AND still)
+    """
+    dist = _get_dist_to_goal_2d(env)
+    speed_xy = torch.norm(env.scene["object"].data.root_lin_vel_w[:, :2], p=2, dim=-1)
+
+    gate_mid  = (dist < 0.08).float()
+    gate_near = (dist < 0.04).float()
+    stop_reward = torch.exp(-3.0 * speed_xy)
+    return stop_reward * (gate_mid + gate_near)
 
 
 def ms_fine_position_reward(env: ManagerBasedRLEnv) -> torch.Tensor:

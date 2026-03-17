@@ -197,7 +197,8 @@ class EventCfg:
 class RewardsCfg:
     reaching_reward = RewTerm(func=mdp.ms_reaching_reward, weight=5.0)
 
-    goal_reaching_reward = RewTerm(func=mdp.ms_goal_reaching_reward, weight=10.0)
+    goal_reaching_reward = RewTerm(func=mdp.ms_phased_goal_reward, weight=10.0)
+    stationary_reward = RewTerm(func=mdp.ms_stationary_reward, weight=8.0)
     fine_position_reward = RewTerm(func=mdp.ms_fine_position_reward, weight=10.0)
     goal_pos_x_reward = RewTerm(func=mdp.ms_goal_pos_x_reward, weight=5.0)
     goal_pos_y_reward = RewTerm(func=mdp.ms_goal_pos_y_reward, weight=5.0)
