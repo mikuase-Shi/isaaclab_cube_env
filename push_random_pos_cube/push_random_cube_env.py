@@ -88,7 +88,7 @@ class PushSceneCfg(InteractiveSceneCfg):
             pos=(0.7,0.0,0.0)
         ),
         spawn=sim_utils.CuboidCfg(
-            size=(1.0,0.6,0.02),
+            size=(2.0, 1.2, 0.02),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(kinematic_enabled=True),
             physics_material=sim_utils.RigidBodyMaterialCfg(
@@ -178,8 +178,8 @@ class EventCfg:
         params={
             "asset_cfg":SceneEntityCfg("goal"),
             "pose_range": {
-             "x": (-0.1, 0.1),
-             "y": (-0.25, 0.25),
+             "x": (-0.3, 0.15),
+             "y": (-0.45, 0.45),
              "z": (0.011, 0.011),
              "roll": (0.0, 0.0), 
              "pitch": (0.0, 0.0),
@@ -226,7 +226,7 @@ class TerminationsCfg:
 
 @configclass
 class PushEnvCfg(ManagerBasedRLEnvCfg):
-    scene: PushSceneCfg = PushSceneCfg(num_envs=4096, env_spacing=2.0)
+    scene: PushSceneCfg = PushSceneCfg(num_envs=4096, env_spacing=2.5)
     actions: ActionsCfg = ActionsCfg()
     observations: ObservationsCfg = ObservationsCfg()
     events: EventCfg = EventCfg()
