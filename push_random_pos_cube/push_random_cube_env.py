@@ -178,8 +178,8 @@ class EventCfg:
         params={
             "asset_cfg":SceneEntityCfg("goal"),
             "pose_range": {
-             "x": (-0.3, 0.15),
-             "y": (-0.45, 0.45),
+             "x": (-0.3, 0.1),
+             "y": (-0.3, 0.3),
              "z": (0.011, 0.011),
              "roll": (0.0, 0.0), 
              "pitch": (0.0, 0.0),
