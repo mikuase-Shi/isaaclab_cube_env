@@ -144,6 +144,45 @@ def ms_overshoot_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
     return vel_away * close_mask
 
 
+def ms_past_goal_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
+    """Penalize the object for overshooting past the goal along the start→goal axis.
+
+    The object start position (0.5, 0.0) in local frame is converted to world
+    coordinates via env_origins so this works correctly in multi-env setups.
+
+    How it works:
+      1. start_w = env_origins[:, :2] + (0.5, 0.0)
+      2. Compute unit vector  d = normalize(goal - start)
+      3. Project object position onto this axis:
+           proj = dot(obj - start, d)
+           goal_proj = dot(goal - start, d)
+      4. overshoot = max(0, proj - goal_proj)   (positive = past the goal)
+      5. penalty = tanh(5 * overshoot)           (smooth, bounded 0-1)
+    """
+    obj_pos  = env.scene["object"].data.root_pos_w
+    goal_pos = env.scene["goal"].data.root_pos_w
+    origins  = env.scene.env_origins
+
+    # Object start position in world frame
+    start_w = origins[:, :2].clone()
+    start_w[:, 0] += 0.5  # local x offset of the object init_state
+    # start_w[:, 1] += 0.0  # local y offset is 0
+
+    # Start → goal direction (2D)
+    sg = goal_pos[:, :2] - start_w
+    sg_len = torch.norm(sg, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
+    sg_unit = sg / sg_len
+
+    # Project object and goal onto start→goal axis
+    obj_proj  = ((obj_pos[:, :2] - start_w) * sg_unit).sum(dim=-1)
+    goal_proj = sg_len.squeeze(-1)  # = dot(goal - start, sg_unit) = |sg|
+
+    # Overshoot: how far past the goal the object has gone
+    overshoot = (obj_proj - goal_proj).clamp(min=0.0)
+
+    return torch.tanh(5.0 * overshoot)
+
+
 def ms_z_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
     obj_pos = env.scene["object"].data.root_pos_w
     

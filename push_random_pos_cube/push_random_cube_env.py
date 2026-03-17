@@ -178,7 +178,7 @@ class EventCfg:
         params={
             "asset_cfg":SceneEntityCfg("goal"),
             "pose_range": {
-             "x": (0.4, 0.8),
+             "x": (-0.1, 0.1),
              "y": (-0.25, 0.25),
              "z": (0.011, 0.011),
              "roll": (0.0, 0.0), 
@@ -205,6 +205,7 @@ class RewardsCfg:
 
     near_goal_vel_penalty = RewTerm(func=mdp.ms_near_goal_vel_penalty, weight=-2.0)
     overshoot_penalty = RewTerm(func=mdp.ms_overshoot_penalty, weight=-5.0)
+    past_goal_penalty = RewTerm(func=mdp.ms_past_goal_penalty, weight=-8.0)
 
     z_stability_reward = RewTerm(func=mdp.ms_z_reward, weight=2.0)
 
