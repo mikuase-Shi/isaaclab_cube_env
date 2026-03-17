@@ -13,11 +13,9 @@ def _get_tcp_push_pose(env: ManagerBasedRLEnv) -> torch.Tensor:
     obj_pos = env.scene["object"].data.root_pos_w
     goal_pos = env.scene["goal"].data.root_pos_w
 
-    # Vector from object to goal in XY
     dir_xy = goal_pos[:, :2] - obj_pos[:, :2]
     dist_xy = torch.norm(dir_xy, p=2, dim=-1, keepdim=True)
 
-    # Fallback: if goal almost coincides with object, use -X direction
     eps = 1e-6
     default_dir = torch.tensor([-1.0, 0.0], device=obj_pos.device).view(1, 2)
     dir_xy_unit = torch.where(
@@ -27,9 +25,7 @@ def _get_tcp_push_pose(env: ManagerBasedRLEnv) -> torch.Tensor:
     )
 
     tcp_push_pose = obj_pos.clone()
-    # Move 5.5 cm behind the cube along -dir_xy_unit
     tcp_push_pose[:, :2] = obj_pos[:, :2] - 0.055 * dir_xy_unit
-    # Lower part of cube to reduce tipping
     tcp_push_pose[:, 2] = obj_pos[:, 2] - 0.05
     return tcp_push_pose
 
@@ -58,14 +54,11 @@ def ms_goal_reaching_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
     reach_multiplier = _get_reach_multiplier(env)
     dist_to_goal_2d = _get_dist_to_goal_2d(env)
 
-    # Far: linear shaping; Near (<0.1m): tanh for smooth convergence
     far_mask = dist_to_goal_2d >= 0.1
     near_mask = ~far_mask
 
-    # Far: 1 - dist / 0.5 (clipped to [0,1])
     far_reward = 1.0 - torch.clamp(dist_to_goal_2d / 0.5, min=0.0, max=1.0)
 
-    # Near: 1 - tanh(2 * dist)
     near_reward = 1.0 - torch.tanh(2.0 * dist_to_goal_2d)
 
     push_reward = torch.where(far_mask, far_reward, near_reward)
@@ -98,7 +91,6 @@ def ms_near_goal_vel_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
     obj_lin_vel = env.scene["object"].data.root_lin_vel_w
     vel_xy = torch.norm(obj_lin_vel[:, :2], p=2, dim=-1)
     
-    # Increase penalty intensity when very close (< 0.04m)
     close_mask = (dist_to_goal_2d < 0.05).float()
     very_close_mask = (dist_to_goal_2d < 0.02).float()
     
@@ -111,16 +103,12 @@ def ms_overshoot_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
     obj_lin_vel = env.scene["object"].data.root_lin_vel_w
     dist_to_goal_2d = _get_dist_to_goal_2d(env)
 
-    # Unit vector from goal to object
     to_obj = obj_pos[:, :2] - goal_pos[:, :2]
     to_obj_norm = torch.norm(to_obj, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
     to_obj_unit = to_obj / to_obj_norm
 
-    # Velocity component moving AWAY from the goal
-    # (Positive value means velocity vector has a component in goal->obj direction)
     vel_away = (obj_lin_vel[:, :2] * to_obj_unit).sum(dim=-1).clamp(min=0.0)
 
-    # Apply penalty when within 6cm of the goal
     close_mask = (dist_to_goal_2d < 0.06).float()
     return vel_away * close_mask
 
@@ -128,8 +116,6 @@ def ms_overshoot_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
 def ms_z_reward(env: ManagerBasedRLEnv) -> torch.Tensor:
     obj_pos = env.scene["object"].data.root_pos_w
     
-    # Target height (COM) is roughly 0.15m if tabletop is at 0.02 and cube size is 0.15
-    # Let's keep it simple and reward staying at the initial height
     current_obj_z = obj_pos[:, 2]
     z_deviation = torch.abs(current_obj_z - 0.15) 
     z_reward = 1.0 - torch.tanh(10.0 * z_deviation)
