@@ -63,11 +63,11 @@ class PushSceneCfg(InteractiveSceneCfg):
     goal: RigidObjectCfg = RigidObjectCfg(
      prim_path="{ENV_REGEX_NS}/Goal",
      init_state=RigidObjectCfg.InitialStateCfg(
-         pos=(0.7, 0.0, 0.011),  # 刚好在桌面 (Z=0.01) 上方 1mm，防止深度冲突(Z-fighting)
+         pos=(0.7, 0.0, 0.011), 
          rot=(1.0, 0.0, 0.0, 0.0)
         ),
      spawn=sim_utils.CuboidCfg(
-         size=(0.15, 0.15, 0.01), # 变成极薄的贴纸
+         size=(0.15, 0.15, 0.01),
          collision_props=sim_utils.CollisionPropertiesCfg(
              collision_enabled=False
             ),
@@ -77,7 +77,7 @@ class PushSceneCfg(InteractiveSceneCfg):
             ),
          mass_props=sim_utils.MassPropertiesCfg(mass=0.1),
          visual_material=sim_utils.PreviewSurfaceCfg(
-             diffuse_color=(0.0, 0.8, 0.0) # 显眼的绿色目标区
+             diffuse_color=(0.0, 0.8, 0.0)
             ),
         ),
     )
@@ -89,7 +89,6 @@ class PushSceneCfg(InteractiveSceneCfg):
         ),
         spawn=sim_utils.CuboidCfg(
             size=(1.0,0.6,0.02),
-            #Kinematic(Fixed) vs Dynamic
             collision_props=sim_utils.CollisionPropertiesCfg(),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(kinematic_enabled=True),
             physics_material=sim_utils.RigidBodyMaterialCfg(
@@ -132,7 +131,6 @@ class ObservationsCfg:
         actions=ObsTerm(func=mdp.last_action)
 
         rel_ee_object_distance=ObsTerm(func=mdp.rel_ee_object_distance)
-        # 把 func=mdp.root_pos_w 替换成你刚刚写的局部函数
         object_pos=ObsTerm(func=mdp.object_local_pos_obs, params={"asset_cfg":SceneEntityCfg("object")})
         object_quat=ObsTerm(func=mdp.root_quat_w,params={"asset_cfg":SceneEntityCfg("object")})
 
@@ -180,9 +178,9 @@ class EventCfg:
         params={
             "asset_cfg":SceneEntityCfg("goal"),
             "pose_range": {
-             "x": (0.6, 0.8),
-             "y": (-0.2, 0.2),
-             "z": (0.011, 0.011), # 锁定在桌面高度
+             "x": (-0.1, 0.1),
+             "y": (-0.25, 0.25),
+             "z": (0.011, 0.011),
              "roll": (0.0, 0.0), 
              "pitch": (0.0, 0.0),
              "yaw": (-math.pi/2, math.pi/2)
@@ -197,23 +195,18 @@ class EventCfg:
 
 @configclass
 class RewardsCfg:
-    reaching_reward = RewTerm(func=mdp.ms_reaching_reward, weight=10.0)
+    reaching_reward = RewTerm(func=mdp.ms_reaching_reward, weight=5.0)
 
-    # Goal position (higher sensitivity tanh(10*d))
-    goal_reaching_reward = RewTerm(func=mdp.ms_goal_reaching_reward, weight=15.0)
-    # Fine position: last 1--2 cm (active when dist < 3 cm)
-    fine_position_reward = RewTerm(func=mdp.ms_fine_position_reward, weight=15.0)
-    # Per-axis for clear X/Y micro-adjustment
+    goal_reaching_reward = RewTerm(func=mdp.ms_phased_goal_reward, weight=10.0)
+    stationary_reward = RewTerm(func=mdp.ms_stationary_reward, weight=8.0)
+    goal_alignment_reward = RewTerm(func=mdp.ms_goal_alignment_reward, weight=15.0)
+    fine_alignment_reward = RewTerm(func=mdp.ms_fine_alignment_reward, weight=8.0)
     goal_pos_x_reward = RewTerm(func=mdp.ms_goal_pos_x_reward, weight=5.0)
     goal_pos_y_reward = RewTerm(func=mdp.ms_goal_pos_y_reward, weight=5.0)
 
-    # Orientation: stronger sensitivity, only within 5 cm
-    goal_alignment_reward = RewTerm(func=mdp.ms_goal_alignment_reward, weight=15.0)
-    # Fine angle tuning when dist < 2 cm
-    fine_alignment_reward = RewTerm(func=mdp.ms_fine_alignment_reward, weight=8.0)
-
-    # Encourage settling near goal (penalize velocity when close)
-    near_goal_vel_penalty = RewTerm(func=mdp.ms_near_goal_vel_penalty, weight=-1.0)
+    near_goal_vel_penalty = RewTerm(func=mdp.ms_near_goal_vel_penalty, weight=-2.0)
+    overshoot_penalty = RewTerm(func=mdp.ms_overshoot_penalty, weight=-5.0)
+    past_goal_penalty = RewTerm(func=mdp.ms_past_goal_penalty, weight=-8.0)
 
     z_stability_reward = RewTerm(func=mdp.ms_z_reward, weight=2.0)
 
@@ -229,7 +222,7 @@ class TerminationsCfg:
     )
     task_success = DoneTerm(
         func=mdp.object_reached_goal,
-        params={"pos_threshold": 0.02, "rot_threshold": 0.1}
+        params={"pos_threshold": 0.008, "rot_threshold": 0.1}
     )
 
 
